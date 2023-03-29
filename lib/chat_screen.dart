@@ -7,13 +7,12 @@ import 'package:didier/SharedPreference.dart';
 import 'package:didier/chatModel.dart';
 import 'package:didier/constants.dart';
 import 'package:didier/dio_api_client.dart';
-// import 'package:didier/dio_api_client.dart';
-// import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'Chat35Model.dart';
 import 'chatmessage.dart';
 import 'game_route.dart';
 
@@ -35,8 +34,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isTyping = false;
   var isListing = false;
 
-  BannerAd? _bannerAd;
-  bool _isBannerAdReady = false;
+  BannerAd? bannerAd;
+  bool isBannerAdReady = false;
 
   @override
   void initState() {
@@ -53,32 +52,31 @@ class _ChatScreenState extends State<ChatScreen> {
     ci.value = ChatImageModel.fromJson(response?.data ?? {});
   }
 
-  Rx<chatModel> cm = chatModel().obs;
+  Rx<Chat35Model> cm = Chat35Model().obs;
   Rx<ChatImageModel> ci = ChatImageModel().obs;
   Future<void> chatAPI() async {
-    var jsonData = {
-      "model": "text-davinci-003",
-      "prompt": _controller.text,
-      "temperature": 0.9,
-      "max_tokens": 150,
-      "top_p": 1,
-      "frequency_penalty": 0.0,
-      "presence_penalty": 0.6,
-      "stop": [" AI:", "Human:"]
+    var jsonData2 = {
+      "model": "gpt-3.5-turbo",
+      "messages": [
+        {
+          "role": "user",
+          "content": _controller.text,
+        }
+      ]
     };
-    final response = await DioResponse.postApi(
-        'https://api.openai.com/v1/completions', jsonData);
 
-    cm.value = chatModel.fromJson(response?.data ?? {});
+    final response = await DioResponse.postApi(
+        'https://api.openai.com/v1/chat/completions', jsonData2);
+
+    cm.value = Chat35Model.fromJson(response?.data ?? {});
   }
 
   @override
   void dispose() {
-    _bannerAd!.dispose();
-
+    bannerAd!.dispose();
     _subscription?.cancel();
-    Constant.newUser = "1";
-    SharedPreference.addStringToSF("newUser", "0");
+    // Constant.newUser = "1";
+    // SharedPreference.addStringToSF("newUser", "0");
     super.dispose();
   }
 
@@ -114,10 +112,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _controller.clear();
 
-      insertNewData(cm.value.choices?[0].text ?? 'NA');
+      insertNewData(cm.value.choices?[0].message?.content ?? 'NA');
     }
     ci.value = ChatImageModel();
-    cm.value = chatModel();
+    cm.value = Chat35Model();
     // _scrollController.animateTo(
     //   _scrollController.position.maxScrollExtent + 512,
     //   curve: Curves.easeOut,
@@ -149,25 +147,21 @@ class _ChatScreenState extends State<ChatScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-
-
-
-
               Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   // COMPLETE: Display a banner when ready
-
-                  if (_isBannerAdReady)
-                    Container(
-                      width: _bannerAd!.size.width.toDouble(),
-                      height: _bannerAd!.size.height.toDouble(),
-                      child: AdWidget(ad: _bannerAd!),
+                  if (isBannerAdReady)
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: bannerAd == null
+                          ? Container()
+                          : Container(
+                              width: bannerAd!.size.width.toDouble(),
+                              height: bannerAd!.size.height.toDouble(),
+                              child: AdWidget(ad: bannerAd!),
+                            ),
                     ),
-                  SizedBox(
-                    height: 10.0,
-                  ),
-
                   if (_messages.length == 0)
                     GestureDetector(
                       onTap: () {
@@ -178,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         children: [
                           Expanded(
                             child: Container(
-                                height: _bannerAd!.size.height.toDouble(),
+                                height: bannerAd!.size.height.toDouble(),
                                 margin: EdgeInsets.only(
                                   bottom: 5,
                                 ),
@@ -203,9 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ],
                       ),
                     ),
-                  SizedBox(
-                    height: 10,
-                  ),
+
                   Flexible(
                       child: ListView.builder(
                     controller: _scrollController,
@@ -301,82 +293,82 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: GestureDetector(
-                    onTap: () async {
-                      setState(() {});
-                      if (_isTyping) return;
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: GestureDetector(
+                  onTap: () async {
+                    setState(() {});
+                    if (_isTyping) return;
 
-                      if (!isListing) {
-                        var available = await speechToText.initialize();
-                        if (available) {
-                          setState(() {
-                            isListing = true;
-                            speechToText.listen(onResult: (result) {
-                              setState(() {
-                                _controller.text = result.recognizedWords;
-                              });
+                    if (!isListing) {
+                      var available = await speechToText.initialize();
+                      if (available) {
+                        setState(() {
+                          isListing = true;
+                          speechToText.listen(onResult: (result) {
+                            setState(() {
+                              _controller.text = result.recognizedWords;
                             });
                           });
-                          // setState(() {
-                          //   isListing = true;
-                          //   _controller.text = "result.recognizedWords";
-                          // });
-                        }
-                      } else {
-                        setState(() {
-                          isListing = false;
                         });
-
-                        speechToText.stop();
-
-                        _sendMessage();
+                        // setState(() {
+                        //   isListing = true;
+                        //   _controller.text = "result.recognizedWords";
+                        // });
                       }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 30),
-                      child: Image.asset(
-                        isListing ? "images/i5.png" : "images/i6.png",
-                        height: 65,
-                        width: 65,
-                      ),
+                    } else {
+                      setState(() {
+                        isListing = false;
+                      });
+
+                      speechToText.stop();
+
+                      _sendMessage();
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 30),
+                    child: Image.asset(
+                      isListing ? "images/i5.png" : "images/i6.png",
+                      height: 65,
+                      width: 65,
                     ),
                   ),
                 ),
               ),
-
             ],
-
           ),
         ));
   }
 
   void loadBannerAd() {
-    _bannerAd = BannerAd(
+    bannerAd = null;
+    bannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
       request: AdRequest(),
       size: AdSize.banner,
       listener: BannerAdListener(
         onAdLoaded: (_) {
           setState(() {
-            _isBannerAdReady = true;
-            print('########## ${_isBannerAdReady}');
+            isBannerAdReady = true;
+            print('########## ${isBannerAdReady}');
           });
         },
         onAdFailedToLoad: (ad, err) {
-          print('Failed to load a banner ad: ${err.message}');
-          _isBannerAdReady = false;
-          ad.dispose();
+          setState(() {
+            print("err 0");
+            print(err);
+            isBannerAdReady = false;
+            ad.dispose();
+          });
         },
       ),
     );
 
-    _bannerAd!.load();
+    bannerAd?.load();
   }
 }
 

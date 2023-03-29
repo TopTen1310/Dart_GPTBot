@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:didier/AdHelper.dart';
+import 'package:didier/adController.dart';
 import 'package:didier/chat_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,76 +15,18 @@ class ThirdScreen extends StatefulWidget {
   State<ThirdScreen> createState() => _ThirdScreenState();
 }
 
-const int maxFailedLoadAttempts = 3;
-
 class _ThirdScreenState extends State<ThirdScreen> {
-  InterstitialAd? interstitialAd;
-  int numInterstitialLoadAttempts = 0;
-  var adCompleter = Completer<void>();
+  AdController adc = Get.put(AdController());
 
   @override
   void initState() {
     super.initState();
-    loadData();
-  }
-
-  Future<void> loadData() async {
-    await createInterstitialAd();
-  }
-
-  createInterstitialAd() async {
-    await InterstitialAd.load(
-        adUnitId: AdHelper.interstitialAdUnitId,
-        request: const AdRequest(),
-        adLoadCallback: InterstitialAdLoadCallback(
-          onAdLoaded: (InterstitialAd ad) {
-            print('$ad loaded 000000');
-            interstitialAd = ad;
-            numInterstitialLoadAttempts = 0;
-            interstitialAd!.setImmersiveMode(true);
-          },
-          onAdFailedToLoad: (LoadAdError error) {
-            print('InterstitialAd failed to load0000: $error.');
-            numInterstitialLoadAttempts += 1;
-            interstitialAd = null;
-            if (numInterstitialLoadAttempts < maxFailedLoadAttempts) {
-              createInterstitialAd();
-            }
-          },
-        ));
-    await adCompleter.future;
-  }
-
-  void showInterstitialAd() {
-
-
-    if (interstitialAd == null) {
-      print('Warning 000 111 : attempt to show interstitial before loaded.');
-      return;
-    }
-    interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (InterstitialAd ad) {
-        print('$ad show ad......00');
-      },
-      onAdDismissedFullScreenContent: (InterstitialAd ad) {
-        print('$ad  dismiss ad.....00');
-        ad.dispose();
-        createInterstitialAd();
-      },
-      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
-        print('$ad faild.....: $error');
-        ad.dispose();
-        createInterstitialAd();
-      },
-    );
-    interstitialAd!.show();
-    interstitialAd = null;
   }
 
   @override
   void dispose() {
     super.dispose();
-    interstitialAd?.dispose();
+    // interstitialAd?.dispose();
   }
 
   @override
@@ -115,19 +58,13 @@ class _ThirdScreenState extends State<ThirdScreen> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      // if (interstitialAd != null) {
-                      //   showInterstitialAd();
-                      //   Future.delayed(Duration(milliseconds: 1000), () {
-                      //     Get.to(ChatScreen());
-                      //   });
-                      // } else {
-                      //   print('hsgyfsgffuds');
-                      //   Get.to(ChatScreen());
-                      // }
-                      showInterstitialAd();
-                      Future.delayed(Duration(milliseconds: 5000), () {
+                      if (adc.interstitialAd != null) {
+                        adc.showInterstitialAd(() {
+                          Get.to(ChatScreen());
+                        });
+                      } else {
                         Get.to(ChatScreen());
-                      });
+                      }
                     },
                     child: Container(
                       height: 50.0,
