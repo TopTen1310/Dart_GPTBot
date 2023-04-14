@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:didier/ThirdScreen.dart';
 import 'package:didier/adController.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -15,7 +16,22 @@ void main() {
   //     testDeviceIds: ['5B7C11E5387912641FCD70F7821FA8B2']));
   HttpOverrides.global = MyHttpOverrides();
 
-  runApp(const MyApp());
+      if (!kIsWeb) _setTargetPlatformForDesktop();
+
+
+  return runApp(const MyApp());
+}
+
+void _setTargetPlatformForDesktop() {
+  TargetPlatform? targetPlatform;
+  if (Platform.isMacOS) {
+    targetPlatform = TargetPlatform.iOS;
+  } else if (Platform.isLinux || Platform.isWindows) {
+    targetPlatform = TargetPlatform.android;
+  }
+  if (targetPlatform != null) {
+    debugDefaultTargetPlatformOverride = targetPlatform;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -127,6 +143,16 @@ class SecondScreen extends StatelessWidget {
                       )),
                     ),
                   ),
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  // GestureDetector(
+                  //   onTap: () {},
+                  //   child: Container(
+                  //     child: Image.asset('images/rating2.png'),
+                  //     height: 40,
+                  //   ),
+                  // ),
                 ],
               ),
             ),

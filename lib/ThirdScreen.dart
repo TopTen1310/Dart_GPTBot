@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app_review/app_review.dart';
 import 'package:didier/AdHelper.dart';
 import 'package:didier/adController.dart';
 import 'package:didier/chat_screen.dart';
@@ -21,7 +22,12 @@ class _ThirdScreenState extends State<ThirdScreen> {
   @override
   void initState() {
     super.initState();
+    AppReview.getAppID.then(log);
   }
+
+  String appID = "";
+
+  String output = "";
 
   @override
   void dispose() {
@@ -85,10 +91,43 @@ class _ThirdScreenState extends State<ThirdScreen> {
                       )),
                     ),
                   ),
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     // print("*****${AppReview.requestReview.then(log)}");
+                  //     // print("**l***${log}");
+                  //     // print("**a***${appID}");
+                  //     // print("**o***${output}");
+                  //     //
+                  //     // if (output == "Success: true") {
+                  //     //   AppReview.storeListing.then(log);
+                  //     //
+                  //     //   print("(****)");
+                  //     // } else {
+                  //     //   AppReview.requestReview.then(log);
+                  //     // }
+                  //   },
+                  //   child: Container(
+                  //     child: Image.asset('images/rating.png'),
+                  //     height: 40,
+                  //     color:Colors.white
+                  //   ),
+                  // ),
                 ],
               ),
             ),
           ),
         ));
+  }
+
+  void log(String? message) {
+    if (message != null) {
+      setState(() {
+        output = message;
+      });
+      print(message);
+    }
   }
 }

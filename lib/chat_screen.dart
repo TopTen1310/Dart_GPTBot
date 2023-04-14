@@ -12,7 +12,7 @@ import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import 'Chat35Model.dart';
+import 'chatModel2.dart';
 import 'chatmessage.dart';
 import 'game_route.dart';
 
@@ -55,7 +55,23 @@ class _ChatScreenState extends State<ChatScreen> {
   Rx<Chat35Model> cm = Chat35Model().obs;
   Rx<ChatImageModel> ci = ChatImageModel().obs;
   Future<void> chatAPI() async {
-    var jsonData2 = {
+    //   var jsonData2 = {
+    //   "model": "text-davinci-003",
+    //   "prompt": _controller.text,
+    //   "temperature": 0.9,
+    //   "max_tokens": 150,
+    //   "top_p": 1,
+    //   "frequency_penalty": 0.0,
+    //   "presence_penalty": 0.6,
+    //   "stop": [" Human:", " AI:"]
+    // };
+
+    //  final response = await DioResponse.postApi(
+    //     'https://api.openai.com/v1/completions', jsonData2);
+
+    // cm.value = chatModel.fromJson(response?.data ?? {});
+
+     var jsonData2 = {
       "model": "gpt-3.5-turbo",
       "messages": [
         {
@@ -64,11 +80,16 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       ]
     };
-
-    final response = await DioResponse.postApi(
+   final response = await DioResponse.postApi(
         'https://api.openai.com/v1/chat/completions', jsonData2);
 
-    cm.value = Chat35Model.fromJson(response?.data ?? {});
+    print("response 0000");
+    print(response);
+    if (response != null) {
+      cm.value = Chat35Model.fromJson(response.data);
+    } else {
+      cm.value = Chat35Model.fromJson({});
+    }
   }
 
   @override
@@ -114,6 +135,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
       insertNewData(cm.value.choices?[0].message?.content ?? 'NA');
     }
+
+
+
+    
     ci.value = ChatImageModel();
     cm.value = Chat35Model();
     // _scrollController.animateTo(
